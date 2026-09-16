@@ -101,6 +101,8 @@ struct llama_hparams {
 
     // per-layer expert feed-forward size
     std::array<uint32_t, LLAMA_MAX_LAYERS> n_ff_exp_arr;
+    // per-layer total number of experts (physical expert count, may differ per layer)
+    std::array<uint32_t, LLAMA_MAX_LAYERS> n_expert_arr;
     // per-layer top-k expert routing count
     std::array<uint32_t, LLAMA_MAX_LAYERS> n_expert_used_arr;
 
@@ -400,6 +402,9 @@ struct llama_hparams {
     uint32_t n_ff(uint32_t il = 0) const;
 
     uint32_t n_ff_exp(uint32_t il = 0) const;
+
+    // return the maximum n_expert across all layers
+    uint32_t n_expert_max() const;
 
     uint32_t n_expert_used(uint32_t il = 0) const;
 

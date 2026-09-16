@@ -31,7 +31,7 @@ void llama_model_qwen3next::load_arch_hparams(llama_model_loader & ml) {
 void llama_model_qwen3next::load_arch_tensors(llama_model_loader & ml) {
     LLAMA_LOAD_LOCALS;
 
-    if (n_expert == 0) {
+    if (hparams.n_expert_max() == 0) {
         throw std::runtime_error(arch_name() + " model cannot have zero experts");
     }
 
@@ -94,9 +94,9 @@ void llama_model_qwen3next::load_arch_tensors(llama_model_loader & ml) {
             layer.ssm_out        = create_tensor(tn(LLM_TENSOR_SSM_OUT,        "weight", il), { value_dim, n_embd }, flags);
         }
 
-        layer.ffn_gate_inp  = create_tensor(tn(LLM_TENSOR_FFN_GATE_INP,  "weight", il), { n_embd, n_expert }, flags);
-        layer.ffn_down_exps = create_tensor(tn(LLM_TENSOR_FFN_DOWN_EXPS, "weight", il), { n_ff_exp, n_embd, n_expert }, flags);
-        create_tensor_gate_up_exps(layer, il, n_embd, n_ff_exp, n_expert, flags);
+        layer.ffn_gate_inp  = create_tensor(tn(LLM_TENSOR_FFN_GATE_INP,  "weight", il), { n_embd, hparams.n_expert_arr[il] }, flags);
+        layer.ffn_down_exps = create_tensor(tn(LLM_TENSOR_FFN_DOWN_EXPS, "weight", il), { n_ff_exp, n_embd, hparams.n_expert_arr[il] }, flags);
+        create_tensor_gate_up_exps(layer, il, n_embd, n_ff_exp, hparams.n_expert_arr[il], flags);
 
         // Shared experts
         layer.ffn_gate_inp_shexp = create_tensor(tn(LLM_TENSOR_FFN_GATE_INP_SHEXP, "weight", il), { n_embd }, flags);
@@ -573,7 +573,7 @@ ggml_tensor * llama_model_qwen3next::graph::build_layer_ffn(ggml_tensor * cur, c
                 model.layers[il].ffn_gate_exps,
                 model.layers[il].ffn_down_exps,
                 nullptr,
-                n_expert, n_expert_used,
+                hparams.n_expert_arr[il], n_expert_used,
                 LLM_FFN_SILU, true,
                 hparams.expert_weights_scale,
                 LLAMA_EXPERT_GATING_FUNC_TYPE_SOFTMAX, il,
@@ -766,7 +766,7 @@ llama_model_qwen3next::graph_mtp::graph_mtp(const llama_model & model, const llm
             layer.ffn_gate_exps,
             layer.ffn_down_exps,
             nullptr,
-            n_expert, n_expert_used,
+            hparams.n_expert_arr[il], n_expert_used,
             LLM_FFN_SILU, true,
             hparams.expert_weights_scale,
             LLAMA_EXPERT_GATING_FUNC_TYPE_SOFTMAX, il,
