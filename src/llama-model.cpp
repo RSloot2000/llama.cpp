@@ -1236,7 +1236,9 @@ void llama_model_base::load_hparams(llama_model_loader & ml) {
     ml.get_key(LLM_KV_NEXTN_PREDICT_LAYERS,    hparams.n_layer_nextn,   false);
     GGML_ASSERT(hparams.n_layer_nextn <= hparams.n_layer_all);
     std::fill(hparams.n_expert_arr.begin(), hparams.n_expert_arr.end(), 0);
-    ml.get_key_or_arr(LLM_KV_EXPERT_COUNT, hparams.n_expert_arr, hparams.n_layer_all, false);
+    if (!ml.get_key_or_arr(LLM_KV_EXPERTS_PER_LAYER, hparams.n_expert_arr, hparams.n_layer_all, false)) {
+        ml.get_key_or_arr(LLM_KV_EXPERT_COUNT, hparams.n_expert_arr, hparams.n_layer_all, false);
+    }
     hparams.n_expert = hparams.n_expert_max();
     std::fill(hparams.n_expert_used_arr.begin(), hparams.n_expert_used_arr.end(), 0);
     ml.get_key_or_arr(LLM_KV_EXPERT_USED_COUNT, hparams.n_expert_used_arr, hparams.n_layer_all, false);
